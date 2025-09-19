@@ -4,12 +4,12 @@ name = "netbox-portal-access"
 version = "0.1.0"
 description = "Barebones NetBox plugin to track multi-vendor portal access & roles"
 readme = "README.md"
-authors = [{name="Your Name"}]
+authors = [{name="ds2600"}]
 requires-python = ">=3.10"
 dependencies = []
 
 [project.urls]
-Homepage = "https://github.com/yourname/netbox-portal-access"
+Homepage = "https://github.com/ds2600/netbox-portal-access"
 
 [tool.setuptools]
 packages = ["netbox_portal_access", "netbox_portal_access.api"]

@@ -3,6 +3,7 @@ from netbox.plugins import PluginConfig
 
 class PortalAccessConfig(PluginConfig):
     name = "netbox_portal_access"
+    label = "netbox_portal_access"
     verbose_name = "Portal Access"
     version = "0.1.0"
     base_url = "portal-access"
