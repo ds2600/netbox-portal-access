@@ -1,0 +1,4 @@
+
+include README.md
+include LICENSE
+recursive-include netbox_portal_access/templates *.html
