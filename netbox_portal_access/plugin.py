@@ -8,8 +8,8 @@ class PortalAccessConfig(PluginConfig):
     version = "0.1.0"
     base_url = "portal-access"
     min_version = "4.0.0"
-    max_version = "4.4.1"
+    top_level_menu = True
     required_settings = []
     default_settings = {}
 
-newconfig = PortalAccessConfig
+config = PortalAccessConfig

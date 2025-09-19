@@ -1,4 +1,3 @@
-
 from django.conf import settings
 from netbox.plugins import PluginMenuItem, PluginMenu, PluginMenuButton
 from django.urls import reverse

@@ -1,2 +1,2 @@
-from .plugin import newconfig 
-config = newconfig 
+from .plugin import config 
+config = config 
