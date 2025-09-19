@@ -4,7 +4,7 @@ from . import views
 
 app_name = "netbox_portal_access"
 
-urlpatterns = [
+urlpatterns = (
     # Portals
     path("portals/", views.PortalListView.as_view(), name="portal_list"),
     path("portals/add/", views.PortalEditView.as_view(), name="portal_add"),
@@ -25,4 +25,4 @@ urlpatterns = [
     path("assignments/<int:pk>/", views.AccessAssignmentView.as_view(), name="accessassignment"),
     path("assignments/<int:pk>/edit/", views.AccessAssignmentEditView.as_view(), name="accessassignment_edit"),
     path("assignments/<int:pk>/delete/", views.AccessAssignmentDeleteView.as_view(), name="accessassignment_delete"),
-]
+)
