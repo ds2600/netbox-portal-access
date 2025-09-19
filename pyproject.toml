@@ -12,7 +12,7 @@ dependencies = []
 Homepage = "https://github.com/ds2600/netbox-portal-access"
 
 [tool.setuptools]
-packages = ["netbox_portal_access", "netbox_portal_access.api"]
+packages = ["netbox_portal_access", "netbox_portal_access.api", "netbox_portal_access.migrations", "netbox_portal_access.templatetags"]
 
 [tool.pytest.ini_options]
 addopts = "-ra"
