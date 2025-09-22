@@ -95,7 +95,10 @@ class PortalForm(NetBoxModelForm):
             self.instance.vendor_id = self.cleaned_data["provider"].pk
         else:
             self.instance.vendor_id = self.cleaned_data["tenant"].pk
-        return super().save(*args, **kwargs)class VendorRoleForm(NetBoxModelForm):
+        return super().save(*args, **kwargs)
+
+class VendorRoleForm(NetBoxModelForm):
+
     class Meta:
         model = VendorRole
         fields = ("portal", "name", "category", "description")
