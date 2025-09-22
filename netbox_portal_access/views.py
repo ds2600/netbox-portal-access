@@ -8,6 +8,7 @@ from . import models, forms, tables, filters
 #
 class PortalView(generic.ObjectView):
     queryset = models.Portal.objects.all()
+    template_name = "netbox_portal_access/object.html"
 
 class PortalListView(generic.ObjectListView):
     queryset = models.Portal.objects.all()
@@ -26,6 +27,7 @@ class PortalDeleteView(generic.ObjectDeleteView):
 #
 class VendorRoleView(generic.ObjectView):
     queryset = models.VendorRole.objects.all()
+    template_name = "netbox_portal_access/object.html"
 
 class VendorRoleListView(generic.ObjectListView):
     queryset = models.VendorRole.objects.all()
@@ -44,6 +46,7 @@ class VendorRoleDeleteView(generic.ObjectDeleteView):
 #
 class AccessAssignmentView(generic.ObjectView):
     queryset = models.AccessAssignment.objects.all()
+    template_name = "netbox_portal_access/object.html"
 
 class AccessAssignmentListView(generic.ObjectListView):
     queryset = models.AccessAssignment.objects.all()
