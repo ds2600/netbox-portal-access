@@ -3,31 +3,51 @@ from django.contrib.contenttypes.models import ContentType
 from netbox.forms import NetBoxModelForm
 from circuits.models import Provider
 from tenancy.models import Tenant
+from utilities.forms.fields import DynamicModelChoiceField
+from utilities.forms.widgets import APISelect
 from .models import Portal, VendorRole, AccessAssignment, RoleCategory
 
 class PortalForm(NetBoxModelForm):
     vendor_ct = forms.ModelChoiceField(
         queryset=ContentType.objects.filter(
-            app_label__in=["circuits", "tenancy"],
-            model__in=["provider", "tenant"],
+            app_label__in=["circuits", "tenancy"], model__in=["provider", "tenant"]
         ),
         label="Vendor Type",
     )
 
-    vendor_object = forms.ModelChoiceField(
-        queryset=Provider.objects.none(),  
-        label="Vendor",
-        required=True,
+    provider = DynamicModelChoiceField(
+        queryset=Provider.objects.all(),
+        required=False,
+        label="Provider",
+        widget=APISelect(api_url="/api/circuits/providers/"),
+    )
+    tenant = DynamicModelChoiceField(
+        queryset=Tenant.objects.all(),
+        required=False,
+        label="Tenant",
+        widget=APISelect(api_url="/api/tenancy/tenants/"),
     )
 
     class Meta:
         model = Portal
-        fields = ("vendor_ct", "vendor_object", "name", "base_url", "notes")
+        fields = ("vendor_ct", "provider", "tenant", "name", "base_url", "notes")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
         self.fields.pop("comment", None)
+
+        if self.instance.pk and self.instance.vendor_id:
+            ct = getattr(self.instance, "vendor_ct", None)
+            if ct and ct.app_label == "circuits" and ct.model == "provider":
+                try:
+                    self.initial["provider"] = Provider.objects.get(pk=self.instance.vendor_id)
+                except Provider.DoesNotExist:
+                    pass
+            elif ct and ct.app_label == "tenancy" and ct.model == "tenant":
+                try:
+                    self.initial["tenant"] = Tenant.objects.get(pk=self.instance.vendor_id)
+                except Tenant.DoesNotExist:
+                    pass
 
         ct_pk = self.data.get("vendor_ct") or self.initial.get("vendor_ct")
         if ct_pk:
@@ -39,35 +59,43 @@ class PortalForm(NetBoxModelForm):
             ct = None
 
         if ct and ct.app_label == "circuits" and ct.model == "provider":
-            self.fields["vendor_object"].queryset = Provider.objects.all()
-            self.fields["vendor_object"].label = "Provider"
+            self.fields["provider"].required = True
+            self.fields["tenant"].required = False
+            self.fields["tenant"].help_text = "Ignored when Vendor Type = Provider."
         elif ct and ct.app_label == "tenancy" and ct.model == "tenant":
-            self.fields["vendor_object"].queryset = Tenant.objects.all()
-            self.fields["vendor_object"].label = "Tenant"
+            self.fields["tenant"].required = True
+            self.fields["provider"].required = False
+            self.fields["provider"].help_text = "Ignored when Vendor Type = Tenant."
         else:
-            self.fields["vendor_object"].queryset = Provider.objects.none()
-            self.fields["vendor_object"].help_text = "Select Vendor Type first."
+            self.fields["provider"].required = False
+            self.fields["tenant"].required = False
+            self.fields["provider"].help_text = "Select a Vendor Type above."
+            self.fields["tenant"].help_text = "Select a Vendor Type above."
 
-        if self.instance.pk and self.instance.vendor_id:
-            if self.instance.vendor_ct.app_label == "circuits" and self.instance.vendor_ct.model == "provider":
-                self.fields["vendor_object"].queryset = Provider.objects.all()
-                try:
-                    self.initial["vendor_object"] = Provider.objects.get(pk=self.instance.vendor_id)
-                except Provider.DoesNotExist:
-                    pass
-            elif self.instance.vendor_ct.app_label == "tenancy" and self.instance.vendor_ct.model == "tenant":
-                self.fields["vendor_object"].queryset = Tenant.objects.all()
-                try:
-                    self.initial["vendor_object"] = Tenant.objects.get(pk=self.instance.vendor_id)
-                except Tenant.DoesNotExist:
-                    pass
+    def clean(self):
+        cleaned = super().clean()
+        ct = cleaned.get("vendor_ct")
+        provider = cleaned.get("provider")
+        tenant = cleaned.get("tenant")
+
+        if ct and ct.app_label == "circuits" and ct.model == "provider":
+            if not provider:
+                self.add_error("provider", "Select a Provider for the chosen Vendor Type.")
+            cleaned["tenant"] = None
+        elif ct and ct.app_label == "tenancy" and ct.model == "tenant":
+            if not tenant:
+                self.add_error("tenant", "Select a Tenant for the chosen Vendor Type.")
+            cleaned["provider"] = None
+        return cleaned
 
     def save(self, *args, **kwargs):
-        self.instance.vendor_ct = self.cleaned_data["vendor_ct"]
-        self.instance.vendor_id = self.cleaned_data["vendor_object"].pk
-        return super().save(*args, **kwargs)
-
-class VendorRoleForm(NetBoxModelForm):
+        ct = self.cleaned_data["vendor_ct"]
+        self.instance.vendor_ct = ct
+        if ct.app_label == "circuits" and ct.model == "provider":
+            self.instance.vendor_id = self.cleaned_data["provider"].pk
+        else:
+            self.instance.vendor_id = self.cleaned_data["tenant"].pk
+        return super().save(*args, **kwargs)class VendorRoleForm(NetBoxModelForm):
     class Meta:
         model = VendorRole
         fields = ("portal", "name", "category", "description")
