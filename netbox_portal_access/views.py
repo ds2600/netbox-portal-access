@@ -61,11 +61,11 @@ class AccessAssignmentDeleteView(generic.ObjectDeleteView):
 # Changelog Views
 #
 
-class PortalChangelogView(ObjectChangelogView):
+class PortalChangelogView(ObjectChangeLogView):
     queryset = models.Portal.objects.all()
 
-class VendorRoleChangelogView(ObjectChangelogView):
+class VendorRoleChangelogView(ObjectChangeLogView):
     queryset = models.VendorRole.objects.all()
 
-class AccessAssignmentChangelogView(ObjectChangelogView):
+class AccessAssignmentChangelogView(ObjectChangeLogView):
     queryset = models.AccessAssignment.objects.all()
