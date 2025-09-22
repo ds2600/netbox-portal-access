@@ -1,5 +1,6 @@
 
 from netbox.views import generic
+from netbox.views.generic import ObjectChangeLogView
 from . import models, forms, tables, filters
 
 #
@@ -60,11 +61,11 @@ class AccessAssignmentDeleteView(generic.ObjectDeleteView):
 # Changelog Views
 #
 
-class PortalChangelogView(generic.ObjectChangelogView):
+class PortalChangelogView(ObjectChangelogView):
     queryset = models.Portal.objects.all()
 
-class VendorRoleChangelogView(generic.ObjectChangelogView):
+class VendorRoleChangelogView(ObjectChangelogView):
     queryset = models.VendorRole.objects.all()
 
-class AccessAssignmentChangelogView(generic.ObjectChangelogView):
+class AccessAssignmentChangelogView(ObjectChangelogView):
     queryset = models.AccessAssignment.objects.all()
