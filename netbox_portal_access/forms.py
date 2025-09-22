@@ -13,10 +13,19 @@ class PortalForm(NetBoxModelForm):
         model = Portal
         fields = ("vendor_ct", "vendor_id", "name", "base_url", "notes")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('comment', None)
+
 class VendorRoleForm(NetBoxModelForm):
     class Meta:
         model = VendorRole
         fields = ("portal", "name", "category", "description")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('comment', None)
+
 
 class AccessAssignmentForm(NetBoxModelForm):
     class Meta:
@@ -28,3 +37,8 @@ class AccessAssignmentForm(NetBoxModelForm):
             "active", "mfa_type", "sso_provider",
             "last_verified", "expires_on", "notes",
         )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop('comment', None)
+
