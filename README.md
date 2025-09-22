@@ -13,20 +13,17 @@ A **barebones NetBox plugin** to track who has access to which vendor portals (E
 
 ## Quick start (local dev)
 
-1. **Commit to GitHub**  
-   Create a new repo (e.g., `netbox-portal-access`) and push this folder. The Python package name is `netbox_portal_access`.
-
-2. **Install into NetBox**  
+1. **Install into NetBox**  
    On your NetBox host/venv:
    ```bash
    # Option A: install editable from your Git clone
    pip install -e /opt/netbox/netbox-portal-access
 
    # Option B: via GitHub URL (if the repo is public or has a token)
-   pip install git+https://github.com/<you>/netbox-portal-access.git
+   pip install git+https://github.com/ds2600/netbox-portal-access.git
    ```
 
-3. **Enable the plugin**  
+2. **Enable the plugin**  
    In `configuration.py` (or `configuration/plugins.py` for newer NetBox), add:
    ```python
    PLUGINS = ["netbox_portal_access"]
@@ -36,7 +33,7 @@ A **barebones NetBox plugin** to track who has access to which vendor portals (E
    }
    ```
 
-4. **Migrate & restart**
+3. **Migrate & restart**
    ```bash
    # From the NetBox project root
    source /opt/netbox/venv/bin/activate
@@ -44,7 +41,7 @@ A **barebones NetBox plugin** to track who has access to which vendor portals (E
    sudo systemctl restart netbox netbox-rq
    ```
 
-5. **Where to click**
+4. **Where to click**
    - In the UI sidebar: **Plugins → Portal Access** to find *Portals*, *Vendor Roles*, and *Access Assignments*.
    - Add **Portals** first (pick the vendor type and ID, then give it a friendly name and URL).
    - Add **Vendor Roles** for each portal and map them to a category.
