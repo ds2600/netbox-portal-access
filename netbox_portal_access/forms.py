@@ -1,7 +1,8 @@
-
 from django import forms
 from django.contrib.contenttypes.models import ContentType
 from netbox.forms import NetBoxModelForm
+from circuits.models import Provider
+from tenancy.models import Tenant
 from .models import Portal, VendorRole, AccessAssignment, RoleCategory
 
 class PortalForm(NetBoxModelForm):
