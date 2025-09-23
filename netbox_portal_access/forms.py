@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from netbox.forms import NetBoxModelForm
 from .models import Portal, VendorRole, AccessAssignment, RoleCategory
+from utilities.forms.widgets import DatePicker
 
 class PortalForm(NetBoxModelForm):
     vendor_ct = forms.ModelChoiceField(
@@ -37,6 +38,10 @@ class AccessAssignmentForm(NetBoxModelForm):
             "active", "mfa_type", "sso_provider",
             "last_verified", "expires_on", "notes",
         )
+        widgets = {
+            'last_verified': DatePicker(),
+            'expires_on': DatePicker(),
+        }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
