@@ -13,6 +13,5 @@ class PortalAccessConfig(PluginConfig):
         "stale_days": 90,
         "expiring_soon_days": 14,
     }
-    template_extensions = 'template_content.template_extensions'
 
 config = PortalAccessConfig
