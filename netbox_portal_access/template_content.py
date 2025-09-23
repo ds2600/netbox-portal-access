@@ -71,3 +71,5 @@ class UserPortalAccess(PluginTemplateExtension):
             "netbox_portal_access/inc/portal_access_panel.html",
             extra_context={"assignments": qs},
         )
+
+template_extensions = [ProviderPortalAccess, TenantPortalAccess]
