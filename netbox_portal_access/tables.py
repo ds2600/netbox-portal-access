@@ -1,6 +1,7 @@
 
 from netbox.tables import NetBoxTable
-from django_tables2 import Column, BooleanColumn, DateColumn
+from netbox.tables.columns import BooleanColumn
+from django_tables2 import Column, DateColumn, TemplateColumn
 from .models import Portal, VendorRole, AccessAssignment
 
 class PortalTable(NetBoxTable):
@@ -26,6 +27,17 @@ class AccessAssignmentTable(NetBoxTable):
     active = BooleanColumn()
     last_verified = DateColumn()
     expires_on = DateColumn()
+    needs_push = TemplateColumn(
+        verbose_name="Needs Push",
+        template_code="""
+        {% if record.needs_push %}
+          <span class="badge bg-danger text-white">Needs pushed</span>
+        {% else %}
+          <span class="text-muted">—</span>
+        {% endif %}
+        """,
+        orderable=False,
+    )
     class Meta(NetBoxTable.Meta):
         model = AccessAssignment
-        fields = ("pk", "user", "portal", "role", "active", "last_verified", "expires_on", "created", "last_updated")
+        fields = ("pk", "user", "portal", "role", "active", "last_verified", "expires_on", "created", "last_updated", "needs_push")

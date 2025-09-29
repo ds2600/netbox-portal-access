@@ -2,6 +2,11 @@
 from netbox.views import generic
 from netbox.views.generic import ObjectChangeLogView
 from . import models, forms, tables, filters
+from django_rq import enqueue
+from .tasks import push_assignment
+from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.shortcuts import redirect
+from django.contrib import messages
 
 #
 # Portals
@@ -57,8 +62,24 @@ class AccessAssignmentEditView(generic.ObjectEditView):
     queryset = models.AccessAssignment.objects.all()
     form = forms.AccessAssignmentForm
 
+    def form_valid(self, form):
+        response = super().form_valid(form)
+        if form.cleaned_data.get("queue_push_now") and self.request.user.has_perm("netbox_portal_access.can_push_vendor"):
+            enqueue(push_assignment, assignment_id=self.object.pk, action="upsert")
+        return response
+
 class AccessAssignmentDeleteView(generic.ObjectDeleteView):
     queryset = models.AccessAssignment.objects.all()
+
+class AccessAssignmentQueuePushView(PermissionRequiredMixin, generic.ObjectView):
+    permission_required = "netbox_portal_access.can_push_vendor"
+    queryset = models.AccessAssignment.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        obj = self.get_object(**kwargs)
+        enqueue(push_assignment, assignment_id=obj.pk, action="upsert")
+        messages.success(request, f"Queued push of assignment {obj} to vendor portal.")
+        return redirect(obj.get_absolute_url())
 
 # 
 # Changelog Views

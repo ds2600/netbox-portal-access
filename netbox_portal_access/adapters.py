@@ -10,11 +10,11 @@ def register(
         requires_config: bool = False,
         required_keys: tuple[str, ...] = ()) -> Callable:
     def dec(cls: Type["BaseAdapter"]):
+        _REGISTERY[slug] = cls
         cls.slug = slug
         cls.label = label
         cls.requires_config = requires_config
         cls.required_keys = required_keys
-        _REGISTERY[slug] = cls
         return cls
     return dec
 
@@ -29,7 +29,7 @@ def available_choices(plugins_config: dict) -> list[tuple[str, str]]:
     out: list[tuple[str, str]] = []
     cfg_root = (plugins_config or {}).get("netbox_portal_access", {})
     adapters_cfg = cfg_root.get("adapters", {}) or {}
-    for slug, cls in sorted(_REGISTRY.items(), key=lambda x: x[1].label.lower()):
+    for slug, cls in sorted(_REGISTERY.items(), key=lambda x: x[1].label.lower()):
         if getattr(cls, "required_keys", False):
             req = getattr(cls, "required_keys", ()) or ()
             has_all = slug in adpaters_cfg and all(k in adapters_cfg[slug] for k in req)
@@ -76,7 +76,7 @@ class BaseAdapter:
             return ok, msg, assignment.remote_id
         return self.create_access(assignment)
 
-@register("echo", "Demo Echo (httpbingo)", requires_config=False)
+@register("echo", "Demo Echo (httpbingo)", requires_config=True)
 class EchoAdapter(BaseAdapter):
     default_base_url = "https://httpbingo.org/post"
 

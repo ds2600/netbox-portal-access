@@ -8,10 +8,8 @@
             <th>Portal</th>
             <th>User</th>
             <th>Role</th>
-            <th>Category</th>
             <th>Active</th>
             <th>Last Verified</th>
-            <th>Expires</th>
           </tr>
         </thead>
         <tbody>
@@ -28,10 +26,8 @@
                 {% endif %}
               </td>
               <td>{{ a.role.name }}</td>
-              <td>{{ a.role.get_category_display }}</td>
               <td>{% if a.active %}✔{% else %}✖{% endif %}</td>
               <td>{{ a.last_verified|date:"Y-m-d" }}</td>
-              <td>{{ a.expires_on|date:"Y-m-d" }}</td>
             </tr>
           {% endfor %}
         </tbody>

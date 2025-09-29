@@ -72,4 +72,4 @@ class UserPortalAccess(PluginTemplateExtension):
             extra_context={"assignments": qs},
         )
 
-template_extensions = [ProviderPortalAccess, TenantPortalAccess]
+template_extensions = [ProviderPortalAccess]
