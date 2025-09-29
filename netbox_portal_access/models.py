@@ -1,9 +1,9 @@
-
 from django.conf import settings
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
 from netbox.models import NetBoxModel
+from .adapters import get as get_adapter
 
 class RoleCategory(models.TextChoices):
     PORTAL_ADMIN = "PORTAL_ADMIN", "Portal Admin"
@@ -24,12 +24,30 @@ class Portal(NetBoxModel):
     base_url   = models.URLField(blank=True)
     notes      = models.TextField(blank=True)
 
+    adapter = models.CharField(max_length=64, blank=True, null=True, help_text="Vendor API adapter slug")
+    request_timeout = models.PositiveSmallIntegerField(default=10, help_text="Seconds to wait for API responses")
+    request_retries = models.PositiveSmallIntegerField(default=3, help_text="Number of times to retry failed requests")
+    ssl_verify = models.BooleanField(default=True, help_text="Verify SSL certificates when connecting to the API")
+    last_sync_at = models.DateTimeField(null=True, blank=True)
+
     class Meta:
         unique_together = [('vendor_ct', 'vendor_id', 'name')]
         ordering = ("name",)
 
     def __str__(self):
         return f"{self.vendor} – {self.name}"
+
+    def get_adapter(self):
+        if not self.adapter:
+            return None
+        cls = get_adapter(self.adapter)
+        if not cls:
+            return None
+        cfg = (getattr(settings, "PLUGINS_CONFIG", {})
+               .get("netbox_portal_access", {})
+               .get("adapters", {})
+               .get(self.adapter, {}))
+        return cls(self, cfg)
 
 class VendorRole(NetBoxModel):
     portal     = models.ForeignKey(Portal, on_delete=models.CASCADE, related_name='roles')
@@ -46,6 +64,11 @@ class VendorRole(NetBoxModel):
 
 class AccessAssignment(NetBoxModel):
     # Choose one: link to User (internal employees) or a Contact (via GenericForeignKey).
+    PUSH_STATUS_CHOICE = (
+        ('PENDING', 'Pending'),
+        ('SUCCESS', 'Success'),
+        ('FAILED', 'Failed'),
+    )
     user       = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True,
                                    on_delete=models.CASCADE, related_name='portal_access')
     contact_ct = models.ForeignKey(ContentType, null=True, blank=True, on_delete=models.PROTECT)
@@ -64,6 +87,26 @@ class AccessAssignment(NetBoxModel):
     expires_on    = models.DateField(null=True, blank=True)
     notes      = models.TextField(blank=True)
 
+    remote_id = models.CharField(max_length=128, blank=True, null=True, db_index=True)
+    last_push_status = models.CharField(
+            max_length=10, 
+            choices=PUSH_STATUS_CHOICE, 
+            blank=True, 
+            null=True,
+            db_index=True
+        )
+    last_push_at = models.DateTimeField(null=True, blank=True)
+    last_push_message = models.TextField(blank=True, null=True)
+
+    @property
+    def needs_push(self) -> bool:
+        # Unpushed if never pushed or updated after last push
+        from django.utils import timezone
+        if not self.last_push_at:
+            return True
+        last_updated = getattr(self, "last_updated", None)
+        return bool(last_updated and last_updated > self.last_push_at)
+
     class Meta:
         indexes = [models.Index(fields=['active', 'last_verified', 'expires_on'])]
         constraints = [
@@ -73,6 +116,10 @@ class AccessAssignment(NetBoxModel):
             ),
         ]
         ordering = ("-active", "portal", "role")
+        permissions = [
+                ("can_push_vendor", "Can push to vendor"),
+                ("can_sync_vendor", "Can sync from vendor"),
+        ]
 
     def __str__(self):
         who = getattr(self.user, "username", None) or str(self.contact) or "Unknown"
