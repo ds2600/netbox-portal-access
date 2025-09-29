@@ -21,7 +21,7 @@ class VendorRoleTable(NetBoxTable):
 
 class AccessAssignmentTable(NetBoxTable):
     portal = Column() 
-    role = Column()
+    role = Column(accessor="role__name", verbose_name="Role")
     user = Column() 
     active = BooleanColumn()
     last_verified = DateColumn()
