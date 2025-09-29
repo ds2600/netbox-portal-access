@@ -1,0 +1,12 @@
+{% extends "generic/object_changelog.html" %}
+
+{# Optional: keep left content to the default changelog table #}
+{% block content_left %}
+  {{ block.super }}
+{% endblock %}
+
+{# Optional: show your right-side credentials panel on the changelog page too #}
+{% block content_right %}
+  {% include "netbox_portal_access/portal_credentials_panel.html" with portal=object cred=object.credential only %}
+{% endblock %}
+
