@@ -1,6 +1,7 @@
 
 from django.urls import path
 from . import views
+from . import models
 
 app_name = "netbox_portal_access"
 
@@ -13,6 +14,7 @@ urlpatterns = (
     path("portals/<int:pk>/delete/", views.PortalDeleteView.as_view(), name="portal_delete"),
     path("portals/<int:pk>/credentials/", views.PortalCredentialEditView.as_view(), name="portal_credentials_edit"),
     path("portals/<int:pk>/credentials/test/", views.PortalCredentialTestView.as_view(), name="portal_credentials_test"),
+
 
     # Vendor Roles
     path("roles/", views.VendorRoleListView.as_view(), name="vendorrole_list"),
@@ -29,7 +31,7 @@ urlpatterns = (
     path("assignments/<int:pk>/delete/", views.AccessAssignmentDeleteView.as_view(), name="accessassignment_delete"),
     path("assignments/<int:pk>/queue-push/", views.AccessAssignmentQueuePushView.as_view(), name="accessassignment_queue_push"),
     # Changelogs
-    path("portals/<int:pk>/changelog/", views.PortalChangelogView.as_view(), name="portal_changelog"),
-    path("roles/<int:pk>/changelog/", views.VendorRoleChangelogView.as_view(), name="vendorrole_changelog"),
-    path("assignments/<int:pk>/changelog/", views.AccessAssignmentChangelogView.as_view(), name="accessassignment_changelog"),
+    path("portals/<int:pk>/changelog/", views.PortalChangelogView.as_view(), name="portal_changelog", kwargs={"model": models.Portal}),
+    path("roles/<int:pk>/changelog/", views.VendorRoleChangelogView.as_view(), name="vendorrole_changelog", kwargs={"model": models.VendorRole}),
+    path("assignments/<int:pk>/changelog/", views.AccessAssignmentChangelogView.as_view(), name="accessassignment_changelog", kwargs={"model": models.AccessAssignment})
 )

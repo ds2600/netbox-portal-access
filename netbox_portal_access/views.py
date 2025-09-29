@@ -1,6 +1,5 @@
 
 from netbox.views import generic
-from netbox.views.generic import ObjectChangeLogView
 from . import models, forms, tables, filters
 from django_rq import enqueue
 from .tasks import push_assignment
@@ -33,14 +32,6 @@ class PortalCredentialEditView(generic.ObjectEditView):
     queryset = models.PortalCredential.objects.all()
     form = forms.PortalCredentialForm
 
-#    def dispatch(self, request, *args, **kwargs):
-#        portal = get_object_or_404(models.Portal, pk=kwargs.get("pk"))
-#        try:
-#            self._obj = portal.credential
-#        except models.PortalCredential.DoesNotExist:
-#            self._obj = models.PortalCredential(portal=portal, data_encrypted="")
-#        return super().dispatch(request, *args, **kwargs)
-
     def get_object(self, **kwargs):
         portal = get_object_or_404(models.Portal, pk=kwargs.get("pk"))
         cred = getattr(portal, "credential", None)
@@ -49,8 +40,12 @@ class PortalCredentialEditView(generic.ObjectEditView):
 
         return models.PortalCredential(portal=portal, data_encrypted="")
 
-#    def alter_object(self, obj, request, url_args, url_kwargs):
-#        return obj
+    def get_extra_context(self, request, instance):
+        portal = instance.portal
+        url = getattr(portal, "get_absolute_url", None)
+        return {
+            "return_url": url() if callable(url) else reverse("plugins:netbox_portal_access:portal", args=[portal.pk]),
+        }
 
 class PortalCredentialTestView(generic.ObjectView):
     queryset = models.Portal.objects.all()
@@ -143,11 +138,15 @@ class AccessAssignmentQueuePushView(PermissionRequiredMixin, generic.ObjectView)
 # Changelog Views
 #
 
-class PortalChangelogView(ObjectChangeLogView):
+class PortalChangelogView(generic.ObjectChangeLogView):
     queryset = models.Portal.objects.all()
+    template_name = "netbox_portal_access/portal_changelog.html"
 
-class VendorRoleChangelogView(ObjectChangeLogView):
+class VendorRoleChangelogView(generic.ObjectChangeLogView):
     queryset = models.VendorRole.objects.all()
+    template_name = "netbox_portal_access/portal_changelog.html"
 
-class AccessAssignmentChangelogView(ObjectChangeLogView):
+class AccessAssignmentChangelogView(generic.ObjectChangeLogView):
     queryset = models.AccessAssignment.objects.all()
+    template_name = "netbox_portal_access/portal_changelog.html"
+

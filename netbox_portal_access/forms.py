@@ -123,9 +123,7 @@ class PortalCredentialForm(NetBoxModelForm):
         payload.update(self.cleaned_data.get("extra_json") or {})
 
         portal.set_credentials(payload)
-        # Keep the PortalCredential instance in sync (ensure it exists)
         if not getattr(self.instance, "pk", None):
-            # After set_credentials, the OneToOne exists
             self.instance = portal.credential
         return self.instance   
 

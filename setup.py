@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='netbox-portal-access',
-    version='0.1.0',
+    version='0.2.0',
     description='NetBox plugin to track multi-vendor portal access & roles.',
     author='William Bunce',
     license='MIT',
