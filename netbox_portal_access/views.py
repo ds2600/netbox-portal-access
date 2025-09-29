@@ -5,8 +5,9 @@ from . import models, forms, tables, filters
 from django_rq import enqueue
 from .tasks import push_assignment
 from django.contrib.auth.mixins import PermissionRequiredMixin
-from django.shortcuts import redirect
+from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
+from django.utils import timezone
 
 #
 # Portals
@@ -26,6 +27,63 @@ class PortalEditView(generic.ObjectEditView):
 
 class PortalDeleteView(generic.ObjectDeleteView):
     queryset = models.Portal.objects.all()
+
+class PortalCredentialEditView(generic.ObjectEditView):
+    template_name = "generic/object_edit.html"
+    queryset = models.PortalCredential.objects.all()
+    form = forms.PortalCredentialForm
+
+#    def dispatch(self, request, *args, **kwargs):
+#        portal = get_object_or_404(models.Portal, pk=kwargs.get("pk"))
+#        try:
+#            self._obj = portal.credential
+#        except models.PortalCredential.DoesNotExist:
+#            self._obj = models.PortalCredential(portal=portal, data_encrypted="")
+#        return super().dispatch(request, *args, **kwargs)
+
+    def get_object(self, **kwargs):
+        portal = get_object_or_404(models.Portal, pk=kwargs.get("pk"))
+        cred = getattr(portal, "credential", None)
+        if cred:
+            return cred
+
+        return models.PortalCredential(portal=portal, data_encrypted="")
+
+#    def alter_object(self, obj, request, url_args, url_kwargs):
+#        return obj
+
+class PortalCredentialTestView(generic.ObjectView):
+    queryset = models.Portal.objects.all()
+
+    def get(self, request, *args, **kwargs):
+        portal = self.get_object(**kwargs)
+        adapter = portal.get_adapter()
+        if not adapter:
+            messages.error(request, "No adapter configured for this portal.")
+            return redirect(portal.get_absolute_url())
+
+        ok = False
+        msg = "No response"
+        try:
+            ok = bool(adapter.ping())
+            msg = "OK" if ok else "Failed"
+        except Exception as e:
+            ok = False
+            msg = f"Exception: {e}"
+
+        cred = getattr(portal, "credential", None)
+        if cred:
+            cred.last_test_at = timezone.now()
+            cred.last_test_status = "OK" if ok else "Failed"
+            cred.last_test_message = msg
+            cred.save()
+
+        if ok:
+            messages.success(request, f"Connection test succeeded: {msg}")
+        else:
+            messages.error(request, f"Connection test failed: {msg}")
+        return redirect(portal.get_absolute_url())
+
 
 #
 # Vendor Roles

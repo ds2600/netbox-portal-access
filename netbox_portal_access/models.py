@@ -2,8 +2,10 @@ from django.conf import settings
 from django.db import models
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.contenttypes.fields import GenericForeignKey
+from django.urls import reverse
 from netbox.models import NetBoxModel
 from .adapters import get as get_adapter
+from .secrets import encrypt_json, decrypt_json
 
 class RoleCategory(models.TextChoices):
     PORTAL_ADMIN = "PORTAL_ADMIN", "Portal Admin"
@@ -43,11 +45,47 @@ class Portal(NetBoxModel):
         cls = get_adapter(self.adapter)
         if not cls:
             return None
-        cfg = (getattr(settings, "PLUGINS_CONFIG", {})
-               .get("netbox_portal_access", {})
-               .get("adapters", {})
-               .get(self.adapter, {}))
-        return cls(self, cfg)
+
+        cfg = (
+            getattr(settings, "PLUGINS_CONFIG", {})
+           .get("netbox_portal_access", {})
+           .get("adapters", {})
+           .get(self.adapter, {})
+        )
+
+        creds = self.get_credentials()
+
+        return cls(self, cfg, creds)
+
+    def get_credentials(self) -> dict:
+        cred = getattr(self, "credential", None)
+        return decrypt_json(cred.data_encrypted) if cred else {}
+
+    def set_credentials(self, data: dict) -> None:
+        from .models import PortalCredential
+        payload = data or {}
+        if hasattr(self, "credential") and self.credential:
+            self.credential.data_encrypted = encrypt_json(payload)
+            self.credential.save()
+        else:
+            PortalCredential.objects.create(portal=self, data_encrypted=encrypt_json(payload))
+
+class PortalCredential(NetBoxModel):
+    portal = models.OneToOneField(Portal, on_delete=models.CASCADE, related_name='credential')
+    data_encrypted = models.TextField()
+
+    last_test_at = models.DateTimeField(null=True, blank=True)
+    last_test_status = models.CharField(max_length=20, blank=True)
+    last_test_message = models.TextField(null=True, blank=True)
+
+    class Meta:
+        ordering = ("-last_updated",)
+        
+    def __str__(self):
+        return f"Credentials for {self.portal}"
+
+    def get_absolute_url(self):
+        return reverse("plugins:netbox_portal_access:portal_credentials_edit", args=[self.portal.pk])
 
 class VendorRole(NetBoxModel):
     portal     = models.ForeignKey(Portal, on_delete=models.CASCADE, related_name='roles')

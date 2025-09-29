@@ -11,6 +11,8 @@ urlpatterns = (
     path("portals/<int:pk>/", views.PortalView.as_view(), name="portal"),
     path("portals/<int:pk>/edit/", views.PortalEditView.as_view(), name="portal_edit"),
     path("portals/<int:pk>/delete/", views.PortalDeleteView.as_view(), name="portal_delete"),
+    path("portals/<int:pk>/credentials/", views.PortalCredentialEditView.as_view(), name="portal_credentials_edit"),
+    path("portals/<int:pk>/credentials/test/", views.PortalCredentialTestView.as_view(), name="portal_credentials_test"),
 
     # Vendor Roles
     path("roles/", views.VendorRoleListView.as_view(), name="vendorrole_list"),

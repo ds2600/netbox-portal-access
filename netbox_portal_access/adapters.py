@@ -46,9 +46,10 @@ class BaseAdapter:
     required_keys: tuple[str, ...] = ()
     default_base_url: str = ""
 
-    def __init__(self, portal, config: dict):
+    def __init__(self, portal, config: dict, creds: dict | None = None):
         self.portal = portal
         self.config = config or {}
+        self.creds = creds or {}
         self.base_url = (self.config.get("base_url") or portal.base_url or self.default_base_url)
 
         self.timeout = getattr(portal, "request_timeout", 10)

@@ -1,10 +1,12 @@
+import json
 from django import forms
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from netbox.forms import NetBoxModelForm
-from .models import Portal, VendorRole, AccessAssignment, RoleCategory
+from .models import Portal, VendorRole, AccessAssignment, RoleCategory, PortalCredential
 from utilities.forms.widgets import DatePicker, APISelect
 from .adapters import available_choices
+from .secrets import mask
 
 class PortalForm(NetBoxModelForm):
     vendor_ct = forms.ModelChoiceField(
@@ -61,6 +63,71 @@ class PortalForm(NetBoxModelForm):
 
         if not self.is_bound:
             self.initial['adapter'] = current
+
+class PortalCredentialForm(NetBoxModelForm):
+    username = forms.CharField(required=False, label="Username")
+    password = forms.CharField(required=False, widget=forms.PasswordInput(render_value=True), label="Password")
+    api_key = forms.CharField(required=False, widget=forms.PasswordInput(render_value=True), label="API Key / Token")
+    client_id = forms.CharField(required=False, label="Client ID", help_text="For OAuth-style APIs (optional)")
+    client_secret = forms.CharField(required=False, widget=forms.PasswordInput(render_value=True), label="Client Secret")
+    extra_json = forms.CharField(required=False, widget=forms.Textarea, label="Extra JSON", help_text="Optional free-form JSON for adapter-specific fields.")
+    
+    class Meta:
+        model = PortalCredential
+        fields: tuple[str, ...] = ()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        portal = self.instance.portal
+        data = portal.get_credentials()
+
+        if data.get("username"): self.fields["username"].initial = data.get("username")
+        if data.get("password"): self.fields["password"].initial = mask(data.get("password"))
+        if data.get("api_key"): self.fields["api_key"].initial = mask(data.get("api_key"))
+        if data.get("client_id"): self.fields["client_id"].initial = data.get("client_id")
+        if data.get("client_secret"): self.fields["client_secret"].initial = mask(data.get("client_secret"))
+
+        extra = {k: v for k, v in data.items() if k not in {"username","password","api_key","client_id","client_secret"}}
+        if extra:
+            self.fields["extra_json"].initial = json.dumps(extra, indent=2, sort_keys=True)
+
+    def clean_extra_json(self):
+        raw = self.cleaned_data.get("extra_json", "").strip()
+        if not raw:
+            return {}
+        try:
+            val = json.loads(raw)
+            if not isinstance(val, dict):
+                raise ValueError("Must be a JSON object")
+            return val
+        except Exception as e:
+            raise forms.ValidationError(f"Invalid JSON: {e}")
+
+    def save(self, commit=True):
+        portal = self.instance.portal
+        existing = portal.get_credentials()
+
+        def _update(name, masked_ok=True):
+            val = self.cleaned_data.get(name)
+            if masked_ok and val in (None, "", "********"):
+                return existing.get(name)
+            return val or None
+
+        payload = {
+            "username": _update("username", masked_ok=False),
+            "password": _update("password"),
+            "api_key": _update("api_key"),
+            "client_id": _update("client_id", masked_ok=False),
+            "client_secret": _update("client_secret"),
+        }
+        payload.update(self.cleaned_data.get("extra_json") or {})
+
+        portal.set_credentials(payload)
+        # Keep the PortalCredential instance in sync (ensure it exists)
+        if not getattr(self.instance, "pk", None):
+            # After set_credentials, the OneToOne exists
+            self.instance = portal.credential
+        return self.instance   
 
 class VendorRoleForm(NetBoxModelForm):
 

@@ -6,7 +6,9 @@ description = "NetBox plugin to track multi-vendor portal access & roles"
 readme = "README.md"
 authors = [{name="ds2600"}]
 requires-python = ">=3.10"
-dependencies = []
+dependencies = [
+    "cryptography>=46.0.1",
+]
 
 [project.urls]
 Homepage = "https://github.com/ds2600/netbox-portal-access"
