@@ -2,7 +2,7 @@
 [project]
 name = "netbox-portal-access"
 version = "0.1.0"
-description = "Barebones NetBox plugin to track multi-vendor portal access & roles"
+description = "NetBox plugin to track multi-vendor portal access & roles"
 readme = "README.md"
 authors = [{name="ds2600"}]
 requires-python = ">=3.10"
